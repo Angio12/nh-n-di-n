@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  --bg-dark: #121214;
+  --panel-bg: #1e1e24;
+  --accent-blue: #3b82f6;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --status-green: #10b981;
+  --status-red: #ef4444;
+  --border-color: #2e2e38;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+}
+
+/* Custom glowing effects and badges */
+.scan-ring {
+  width: 200px;
+  height: 200px;
+  border: 3px dashed var(--status-green);
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.scan-ring::after {
+  content: "+";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--status-green);
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.roi-box-overlay {
+  border: 2px dashed #0f172a;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
