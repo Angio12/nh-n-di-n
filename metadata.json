@@ -1,6 +1,6 @@
 {
   "name": "Nhận diện độ tươi thịt",
-  "description": "Dự án nhận diện độ tươi của thịt bằng màng chỉ thị màu và thuật toán k-NN (Trường THPT Nguyễn Khuyến)",
+  "description": "Dự án nhận diện độ tươi của thịt bằng màng chỉ thị màu (Trường THPT Nguyễn Khuyến)",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

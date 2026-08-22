@@ -48,16 +48,16 @@ export const DatasetModal: React.FC<DatasetModalProps> = ({
             <Activity className="w-5 h-5 text-blue-400" />
             <div>
               <h2 className="text-base font-bold text-white">
-                Bộ Dữ Liệu Thực Nghiệm MEAT_DATASET
+                Bộ Dữ Liệu Mẫu Thực Nghiệm
               </h2>
               <p className="text-xs text-[#9ca3af]">
-                Trường THPT Nguyễn Khuyến • 28 mẫu thực nghiệm chia 2 đợt & 2 nhóm (A & B)
+                Trường THPT Nguyễn Khuyến • 28 mẫu thực nghiệm (Nhóm A & B)
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -127,7 +127,7 @@ export const DatasetModal: React.FC<DatasetModalProps> = ({
                   <th className="p-2.5">Màu RGB</th>
                   <th className="p-2.5">Màu chỉ thị</th>
                   <th className="p-2.5">Trạng thái thịt</th>
-                  <th className="p-2.5">Đánh giá k-NN</th>
+                  <th className="p-2.5">Đánh giá</th>
                   <th className="p-2.5 text-right">Thao tác</th>
                 </tr>
               </thead>

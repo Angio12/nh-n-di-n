@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, AlertCircle, RefreshCw, Upload, Sparkles, SwitchCamera, Check } from 'lucide-react';
+import { Camera, RefreshCw, Upload, SwitchCamera } from 'lucide-react';
 import { extractRGBFromCanvas } from '../utils/knn';
 
 interface CameraScannerProps {
@@ -226,9 +226,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onCance
 
   return (
     <div id="view-camera-panel" className="w-full flex flex-col items-center justify-center animate-in fade-in duration-300">
-      <hidden>
-        <canvas ref={canvasRef} className="hidden" />
-      </hidden>
+      <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
 
       {/* Main Viewport */}
       <div className="relative w-full max-w-[900px] h-[480px] md:h-[520px] bg-white rounded-2xl overflow-hidden border-2 border-[#2e2e38] shadow-2xl flex items-center justify-center">
