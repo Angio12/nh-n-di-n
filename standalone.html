@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dự án nhận diện độ tươi của thịt</title>
+    <style>
+        :root {
+            --bg-dark: #121214;
+            --panel-bg: #1e1e24;
+            --accent-blue: #3b82f6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --status-green: #10b981;
+            --status-red: #ef4444;
+            --border-color: #2e2e38;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER TOÀN MÀN HÌNH */
+        header {
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.3);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent-blue);
+            color: #fff;
+        }
+
+        /* KHU VỰC NỘI DUNG CHÍNH */
+        main {
+            flex: 1;
+            padding: 24px 32px;
+            display: flex;
+            gap: 24px;
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .view-panel {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .view-panel.active {
+            display: flex;
+            gap: 24px;
+        }
+
+        /* VIEW 1: DASHBOARD KẾT QUẢ */
+        .left-col {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .right-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Khung hiển thị ảnh ROI (Mặc định nền trắng) */
+        .image-viewer {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-viewer img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .roi-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            border: 2px dashed #000;
+            border-radius: 50%;
+            box-shadow: 0 0 0 9999px rgba(255, 255, 255, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        /* RGB metrics Grid */
+        .rgb-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .rgb-card {
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .rgb-r { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .rgb-g { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .rgb-b { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .rgb-val { font-size: 24px; margin-top: 4px; }
+
+        /* Status Traffic Light */
+        .status-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .status-item {
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            opacity: 0.25;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+
+        .status-item.active { opacity: 1; transform: translateY(-2px); }
+        .st-green { background-color: var(--status-green); color: #000; }
+        .st-red { background-color: var(--status-red); color: #fff; }
+
+        /* BUTTONS */
+        .action-btn {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-btn:hover { opacity: 0.9; }
+
+        /* VIEW 2: CAMERA TOÀN MÀN HÌNH */
+        #view-camera-panel {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .camera-viewport {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            height: 520px;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            box-sizing: border-box;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .camera-guide-text {
+            background: rgba(0,0,0,0.75);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .scan-ring {
+            width: 200px;
+            height: 200px;
+            border: 3px dashed var(--status-green);
+            border-radius: 50%;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .scan-ring::after {
+            content: "+";
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--status-green);
+            font-size: 32px;
+        }
+
+        .shutter-container {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 12px 16px; flex-direction: column; gap: 10px; }
+            main { padding: 16px; }
+            .view-panel.active { flex-direction: column; }
+            .status-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo-title">
+            <div>
+                <h1 style="font-size: 18px;">Dự án nhận diện độ tươi của thịt</h1>
+                <p style="font-size: 12px; color: var(--text-muted);">Trường THPT Nguyễn Khuyến</p>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('result')">Kết Quả Đánh Giá</button>
+            <button class="tab-btn" onclick="switchTab('camera')">Camera Quét Mẫu</button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <!-- TAB 1: KẾT QUẢ BẢNG ĐIỀU KHIỂN -->
+        <div id="view-result-panel" class="view-panel active">
+            <div class="left-col">
+                <div class="card" style="flex: 1;">
+                    <div class="card-title">Ảnh chụp mẫu & Định vị vùng chỉ thị (ROI)</div>
+                    <div class="image-viewer" id="result-viewer">
+                        <div class="roi-box">VÙNG ROI</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="card">
+                    <div class="card-title">Thông số giá trị màu trích xuất</div>
+                    <div class="rgb-grid">
+                        <div class="rgb-card rgb-r">R (Red)<div class="rgb-val" id="val-r">200</div></div>
+                        <div class="rgb-card rgb-g">G (Green)<div class="rgb-val" id="val-g">176</div></div>
+                        <div class="rgb-card rgb-b">B (Blue)<div class="rgb-val" id="val-b">178</div></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Phân loại mức độ tươi</div>
+                    <div class="status-container">
+                        <div id="status-green-item" class="status-item st-green active">THỊT TƯƠI SẠCH – NÊN ĂN NGAY</div>
+                        <div id="status-red-item" class="status-item st-red">KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG</div>
+                    </div>
+                </div>
+
+                <div class="card" style="flex: 1;">
+                    <div class="card-title">Khuyến nghị sử dụng</div>
+                    <p id="recommendation-text" style="font-size: 15px; line-height: 1.6; color: #d1d5db;">
+                        Thực phẩm đang ở trạng thái <strong>Tươi Tốt</strong>. Màng chỉ thị màu hoạt động ổn định. Đề xuất chế biến ngay hoặc duy trì bảo quản lạnh dưới 4°C.
+                    </p>
+                    <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="action-btn" onclick="switchTab('camera')">📷 Chụp Quét Mẫu Mới</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: CHẾ ĐỘ CAMERA QUÉT -->
+        <div id="view-camera-panel" class="view-panel">
+            <div class="camera-viewport">
+                <!-- Hiển thị nội dung mô phỏng nếu không mở được Webcam -->
+                <div id="camera-fallback" class="camera-placeholder">
+                    <p style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">📷 Luồng xem trực tiếp từ Camera</p>
+                    <p style="font-size: 13px; margin-bottom: 16px;">(Cần cấp quyền truy cập webcam/camera để phát trực tiếp)</p>
+                    <label class="action-btn" style="cursor: pointer;">
+                        Tải ảnh mẫu lên
+                        <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                    </label>
+                </div>
+                <video id="webcam" autoplay playsinline style="display: none;"></video>
+                <div class="camera-overlay">
+                    <div class="camera-guide-text">Di chuyển và căn chỉnh màng chỉ thị vào khung tròn bên dưới</div>
+                    <div class="scan-ring"></div>
+                    <div class="shutter-container">
+                        <button class="action-btn" style="background: #ef4444;" onclick="captureSample()">🔴 Chụp & Phân Tích</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <canvas id="hidden-canvas" style="display: none;"></canvas>
+
+    <script>
+        const MEAT_DATASET = [
+          // Lần thử nghiệm 1
+          { time: "0h", group: "A", r: 200, g: 176, b: 178, obs: "hồng nhạt", status: "tươi", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "12h", group: "A", r: 199, g: 175, b: 181, obs: "hồng nhạt", status: "tươi", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "24h", group: "A", r: 204, g: 182, b: 188, obs: "hồng nhạt", status: "rỉ nước", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "36h", group: "A", r: 205, g: 185, b: 189, obs: "hồng nhạt", status: "xỉn màu", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "48h", group: "A", r: 205, g: 185, b: 189, obs: "hồng nhạt", status: "có mùi thối", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "60h", group: "A", r: 171, g: 178, b: 180, obs: "xanh dương", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+          { time: "72h", group: "A", r: 171, g: 176, b: 158, obs: "xanh lá nhẹ", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+
+          { time: "0h", group: "B", r: 211, g: 189, b: 192, obs: "hồng nhạt", status: "tươi", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "6h", group: "B", r: 200, g: 178, b: 180, obs: "hồng nhạt", status: "rỉ nước", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "12h", group: "B", r: 211, g: 190, b: 184, obs: "hồng nhạt", status: "có mùi thối", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "18h", group: "B", r: 197, g: 180, b: 179, obs: "hồng nhạt", status: "thối rõ", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "24h", group: "B", r: 193, g: 180, b: 176, obs: "hồng pha xanh", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+          { time: "30h", group: "B", r: 184, g: 185, b: 179, obs: "xanh dương", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+          { time: "36h", group: "B", r: 156, g: 167, b: 159, obs: "xanh dương", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+
+          // Lần thử nghiệm 2
+          { time: "0h", group: "A", r: 200, g: 179, b: 183, obs: "hồng nhạt", status: "tươi", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "12h", group: "A", r: 187, g: 159, b: 166, obs: "hồng nhạt", status: "tươi", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "24h", group: "A", r: 185, g: 155, b: 160, obs: "hồng nhạt", status: "rỉ nước", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "36h", group: "A", r: 187, g: 161, b: 162, obs: "hồng nhạt", status: "xỉn màu", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "48h", group: "A", r: 187, g: 161, b: 162, obs: "hồng nhạt", status: "có mùi thối", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "60h", group: "A", r: 167, g: 171, b: 172, obs: "xanh dương", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+          { time: "72h", group: "A", r: 162, g: 166, b: 152, obs: "xanh lá nhẹ", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+
+          { time: "0h", group: "B", r: 205, g: 187, b: 189, obs: "hồng nhạt", status: "tươi", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "6h", group: "B", r: 198, g: 176, b: 177, obs: "hồng nhạt", status: "rỉ nước", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "12h", group: "B", r: 216, g: 195, b: 189, obs: "hồng nhạt", status: "có mùi thối", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "18h", group: "B", r: 189, g: 171, b: 167, obs: "hồng nhạt", status: "thối rõ", label: "xanh lá", conclusion: "THỊT TƯƠI SẠCH – NÊN ĂN NGAY" },
+          { time: "24h", group: "B", r: 176, g: 174, b: 171, obs: "hồng pha xanh", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+          { time: "30h", group: "B", r: 173, g: 175, b: 163, obs: "xanh dương", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" },
+          { time: "36h", group: "B", r: 173, g: 182, b: 168, obs: "xanh dương", status: "thối rõ", label: "đỏ", conclusion: "KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG" }
+        ];
+
+        let videoStream = null;
+
+        function calculateDistance(r1, g1, b1, r2, g2, b2) {
+            return Math.sqrt((r1 - r2)**2 + (g1 - g2)**2 + (b1 - b2)**2);
+        }
+
+        function classify(r, g, b) {
+            const list = MEAT_DATASET.map(item => ({
+                item,
+                dist: calculateDistance(r, g, b, item.r, item.g, item.b)
+            })).sort((a, b) => a.dist - b.dist);
+
+            const top3 = list.slice(0, 3);
+            let greenCount = 0;
+            let redCount = 0;
+            top3.forEach(t => {
+                if (t.item.label === 'xanh lá') greenCount++;
+                else redCount++;
+            });
+
+            return greenCount >= redCount ? 'xanh lá' : 'đỏ';
+        }
+
+        function updateUI(r, g, b, imageSrc = null) {
+            document.getElementById('val-r').textContent = r;
+            document.getElementById('val-g').textContent = g;
+            document.getElementById('val-b').textContent = b;
+
+            const label = classify(r, g, b);
+            const greenItem = document.getElementById('status-green-item');
+            const redItem = document.getElementById('status-red-item');
+            const recText = document.getElementById('recommendation-text');
+
+            if (label === 'xanh lá') {
+                greenItem.classList.add('active');
+                redItem.classList.remove('active');
+                recText.innerHTML = 'Thực phẩm đang ở trạng thái <strong>Tươi Tốt</strong>. Màng chỉ thị màu hoạt động ổn định. Đề xuất chế biến ngay hoặc duy trì bảo quản lạnh dưới 4°C.';
+            } else {
+                redItem.classList.add('active');
+                greenItem.classList.remove('active');
+                recText.innerHTML = 'Thực phẩm đang ở trạng thái <strong>Đã Ơi / Bị Hỏng</strong>. Màng chỉ thị màu đã đổi màu cảnh báo chất lượng không đảm bảo. Tuyệt đối <strong>không sử dụng</strong> làm thực phẩm.';
+            }
+
+            const viewer = document.getElementById('result-viewer');
+            if (imageSrc) {
+                viewer.innerHTML = `<img src="${imageSrc}" alt="Sample"><div class="roi-box">VÙNG ROI</div>`;
+            } else {
+                viewer.innerHTML = `<div style="width:100%;height:100%;background:radial-gradient(circle at center, rgb(${r},${g},${b}) 0%, #f1f5f9 70%);display:flex;align-items:center;justify-content:center;"><div style="width:160px;height:160px;border-radius:50%;background:rgb(${r},${g},${b});box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div></div><div class="roi-box">VÙNG ROI</div>`;
+            }
+        }
+
+        async function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const panels = document.querySelectorAll('.view-panel');
+
+            tabs.forEach(btn => btn.classList.remove('active'));
+            panels.forEach(panel => panel.classList.remove('active'));
+
+            if (tabName === 'result') {
+                tabs[0].classList.add('active');
+                document.getElementById('view-result-panel').classList.add('active');
+                stopCamera();
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('view-camera-panel').classList.add('active');
+                await startCamera();
+            }
+        }
+
+        async function startCamera() {
+            const videoElem = document.getElementById('webcam');
+            const fallbackElem = document.getElementById('camera-fallback');
+
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                videoElem.srcObject = videoStream;
+                videoElem.style.display = 'block';
+                if (fallbackElem) fallbackElem.style.display = 'none';
+            } catch (err) {
+                console.warn("Không thể bật webcam:", err);
+                videoElem.style.display = 'none';
+                if (fallbackElem) fallbackElem.style.display = 'flex';
+            }
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+        }
+
+        function captureSample() {
+            const videoElem = document.getElementById('webcam');
+            const canvas = document.getElementById('hidden-canvas');
+            const ctx = canvas.getContext('2d');
+
+            if (videoStream && videoElem.videoWidth) {
+                canvas.width = videoElem.videoWidth;
+                canvas.height = videoElem.videoHeight;
+                ctx.drawImage(videoElem, 0, 0);
+
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                const r = 50;
+
+                const imgData = ctx.getImageData(cx - r, cy - r, r * 2, r * 2);
+                let sumR = 0, sumG = 0, sumB = 0, count = 0;
+                for (let i = 0; i < imgData.data.length; i += 4) {
+                    sumR += imgData.data[i];
+                    sumG += imgData.data[i+1];
+                    sumB += imgData.data[i+2];
+                    count++;
+                }
+
+                const avgR = Math.round(sumR / count);
+                const avgG = Math.round(sumG / count);
+                const avgB = Math.round(sumB / count);
+                const dataUrl = canvas.toDataURL('image/jpeg');
+
+                updateUI(avgR, avgG, avgB, dataUrl);
+            } else {
+                updateUI(200, 176, 178);
+            }
+
+            switchTab('result');
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.getElementById('hidden-canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+                    const r = Math.min(canvas.width, canvas.height) * 0.15;
+
+                    const imgData = ctx.getImageData(cx - r, cy - r, r * 2, r * 2);
+                    let sumR = 0, sumG = 0, sumB = 0, count = 0;
+                    for (let i = 0; i < imgData.data.length; i += 4) {
+                        sumR += imgData.data[i];
+                        sumG += imgData.data[i+1];
+                        sumB += imgData.data[i+2];
+                        count++;
+                    }
+
+                    const avgR = Math.round(sumR / count);
+                    const avgG = Math.round(sumG / count);
+                    const avgB = Math.round(sumB / count);
+
+                    updateUI(avgR, avgG, avgB, e.target.result);
+                    switchTab('result');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
