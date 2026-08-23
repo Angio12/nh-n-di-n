@@ -282,21 +282,33 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            padding: 16px;
+            padding: 14px;
             box-sizing: border-box;
             z-index: 20;
             pointer-events: none;
         }
 
         .camera-guide-text {
-            background: rgba(0,0,0,0.8);
-            padding: 8px 16px;
+            background: rgba(0,0,0,0.85);
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 12px;
             color: #fff;
             border: 1px solid rgba(255,255,255,0.15);
             max-width: 90%;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .live-status-pill {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.3px;
         }
 
         .scan-ring {
@@ -306,6 +318,7 @@
             border-radius: 50%;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
             position: relative;
+            transition: all 0.25s ease;
         }
 
         @media (min-width: 640px) {
@@ -321,7 +334,23 @@
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             color: var(--status-green);
-            font-size: 30px;
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        .live-rgb-badge {
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
 
         .shutter-container {
@@ -407,14 +436,26 @@
                         <input type="file" accept="image/*" style="display: none;" onchange="onUploadImage(event)">
                     </label>
                 </div>
-                <!-- Cấu hình chống fullscreen trên Safari/Chrome điện thoại -->
+                <!-- Cấu hình chống fullscreen trên điện thoại -->
                 <video id="webcam" autoplay playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5" muted controls="false" style="display: none;"></video>
                 
                 <div class="camera-overlay">
-                    <div class="camera-guide-text">Căn chỉnh màng chỉ thị vào khung tròn bên dưới</div>
-                    <div class="scan-ring"></div>
+                    <div class="camera-guide-text">
+                        <span>⚡ Vùng ROI tự động đọc màu thời gian thực</span>
+                        <div id="live-status-pill" class="live-status-pill" style="display: none;"></div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div id="live-scan-ring" class="scan-ring"></div>
+                        <div id="live-rgb-pill" class="live-rgb-badge" style="display: none;">
+                            <span id="live-r-val" style="color: #f87171; font-weight: bold;">R:--</span>
+                            <span id="live-g-val" style="color: #34d399; font-weight: bold;">G:--</span>
+                            <span id="live-b-val" style="color: #60a5fa; font-weight: bold;">B:--</span>
+                        </div>
+                    </div>
+
                     <div class="shutter-container">
-                        <button class="action-btn" style="background: #ef4444;" onclick="onCapture()">🔴 Chụp & Phân Tích</button>
+                        <button class="action-btn" style="background: #ef4444;" onclick="onCapture()">📸 Lưu & Xem Báo Cáo</button>
                     </div>
                 </div>
             </div>
@@ -435,6 +476,8 @@
         ];
 
         let videoStream = null;
+        let scanInterval = null;
+        let currentLiveRGB = { r: 200, g: 176, b: 178 };
 
         function calcDist(r1, g1, b1, r2, g2, b2) {
             return Math.sqrt((r1 - r2)**2 + (g1 - g2)**2 + (b1 - b2)**2);
@@ -446,7 +489,7 @@
                 dist: calcDist(r, g, b, d[0], d[1], d[2])
             })).sort((a, b) => a.dist - b.dist);
 
-            // Kiểm tra nếu khoảng cách đến mẫu gần nhất > 38 => Nằm ngoài vùng dữ liệu
+            // Nếu khoảng cách đến mẫu gần nhất trong dataset > 38 => Nằm ngoài vùng dữ liệu
             if (sorted[0].dist > 38) {
                 return 'out_of_range';
             }
@@ -536,14 +579,90 @@
                 videoElem.style.display = 'block';
                 if (fallbackElem) fallbackElem.style.display = 'none';
                 await videoElem.play().catch(() => {});
+
+                startLiveScanner();
             } catch (err) {
                 console.warn("Không thể bật webcam:", err);
                 videoElem.style.display = 'none';
                 if (fallbackElem) fallbackElem.style.display = 'flex';
+                stopLiveScanner();
+            }
+        }
+
+        function startLiveScanner() {
+            stopLiveScanner();
+            const canvas = document.getElementById('hidden-canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const videoElem = document.getElementById('webcam');
+            const ringElem = document.getElementById('live-scan-ring');
+            const pillElem = document.getElementById('live-status-pill');
+            const rgbPill = document.getElementById('live-rgb-pill');
+
+            scanInterval = setInterval(() => {
+                if (!videoStream || !videoElem.videoWidth) return;
+                canvas.width = videoElem.videoWidth;
+                canvas.height = videoElem.videoHeight;
+                ctx.drawImage(videoElem, 0, 0);
+
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                const r = Math.min(canvas.width, canvas.height) * 0.18;
+
+                const imgData = ctx.getImageData(cx - r, cy - r, r * 2, r * 2);
+                let sumR = 0, sumG = 0, sumB = 0, count = 0;
+                for (let i = 0; i < imgData.data.length; i += 4) {
+                    sumR += imgData.data[i];
+                    sumG += imgData.data[i + 1];
+                    sumB += imgData.data[i + 2];
+                    count++;
+                }
+
+                if (count > 0) {
+                    const avgR = Math.round(sumR / count);
+                    const avgG = Math.round(sumG / count);
+                    const avgB = Math.round(sumB / count);
+                    currentLiveRGB = { r: avgR, g: avgG, b: avgB };
+
+                    document.getElementById('live-r-val').textContent = `R:${avgR}`;
+                    document.getElementById('live-g-val').textContent = `G:${avgG}`;
+                    document.getElementById('live-b-val').textContent = `B:${avgB}`;
+                    rgbPill.style.display = 'flex';
+
+                    const status = classifyColor(avgR, avgG, avgB);
+                    pillElem.style.display = 'inline-block';
+
+                    if (status === 'fresh') {
+                        ringElem.style.borderColor = 'var(--status-green)';
+                        ringElem.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.7), 0 0 0 9999px rgba(0, 0, 0, 0.55)';
+                        pillElem.style.background = '#10b981';
+                        pillElem.style.color = '#000';
+                        pillElem.textContent = '🟢 THỊT TƯƠI SẠCH';
+                    } else if (status === 'spoiled') {
+                        ringElem.style.borderColor = 'var(--status-red)';
+                        ringElem.style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.7), 0 0 0 9999px rgba(0, 0, 0, 0.55)';
+                        pillElem.style.background = '#ef4444';
+                        pillElem.style.color = '#fff';
+                        pillElem.textContent = '🔴 THỊT ĐÃ ƠI / HỎNG';
+                    } else {
+                        ringElem.style.borderColor = 'var(--status-amber)';
+                        ringElem.style.boxShadow = '0 0 20px rgba(245, 158, 11, 0.7), 0 0 0 9999px rgba(0, 0, 0, 0.55)';
+                        pillElem.style.background = '#f59e0b';
+                        pillElem.style.color = '#000';
+                        pillElem.textContent = '⚠️ NGOÀI VÙNG DỮ LIỆU';
+                    }
+                }
+            }, 100);
+        }
+
+        function stopLiveScanner() {
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
             }
         }
 
         function stopCamera() {
+            stopLiveScanner();
             if (videoStream) {
                 videoStream.getTracks().forEach(track => track.stop());
                 videoStream = null;
@@ -560,24 +679,12 @@
                 canvas.height = videoElem.videoHeight;
                 ctx.drawImage(videoElem, 0, 0);
 
-                const cx = canvas.width / 2;
-                const cy = canvas.height / 2;
-                const r = 45;
-
-                const imgData = ctx.getImageData(cx - r, cy - r, r * 2, r * 2);
-                let sumR = 0, sumG = 0, sumB = 0, count = 0;
-                for (let i = 0; i < imgData.data.length; i += 4) {
-                    sumR += imgData.data[i];
-                    sumG += imgData.data[i + 1];
-                    sumB += imgData.data[i + 2];
-                    count++;
-                }
-                const avgR = Math.round(sumR / count);
-                const avgG = Math.round(sumG / count);
-                const avgB = Math.round(sumB / count);
+                const avgR = currentLiveRGB.r;
+                const avgG = currentLiveRGB.g;
+                const avgB = currentLiveRGB.b;
                 renderUI(avgR, avgG, avgB, canvas.toDataURL('image/jpeg'));
             } else {
-                renderUI(200, 176, 178);
+                renderUI(currentLiveRGB.r, currentLiveRGB.g, currentLiveRGB.b);
             }
             switchTab('result');
         }
@@ -598,7 +705,7 @@
 
                     const cx = canvas.width / 2;
                     const cy = canvas.height / 2;
-                    const r = Math.min(canvas.width, canvas.height) * 0.15;
+                    const r = Math.min(canvas.width, canvas.height) * 0.18;
 
                     const imgData = ctx.getImageData(cx - r, cy - r, r * 2, r * 2);
                     let sumR = 0, sumG = 0, sumB = 0, count = 0;
