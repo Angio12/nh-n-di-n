@@ -42,6 +42,31 @@ export function classifyRGB(
   // Take top k neighbors
   const closestNeighbors = neighbors.slice(0, k);
 
+  // Check if minimum distance is beyond threshold (Out of dataset range)
+  // Standard dataset clusters around R: 155-220, G: 150-200, B: 150-200
+  // Threshold distance around 35.0 euclidean units
+  const minDistance = closestNeighbors[0]?.distance ?? 0;
+  const isOutOfRange = minDistance > 38;
+
+  if (isOutOfRange) {
+    return {
+      r: Math.round(r),
+      g: Math.round(g),
+      b: Math.round(b),
+      label: 'ngoài vùng',
+      conclusion: 'Nằm ngoài vùng dữ liệu',
+      isOutOfRange: true,
+      closestNeighbors,
+      freshVotes: 0,
+      spoiledVotes: 0,
+      confidence: 0,
+      extractedAt: new Date(),
+      imageUrl,
+      roiCenter,
+      roiRadius
+    };
+  }
+
   let freshVotes = 0;
   let spoiledVotes = 0;
 
@@ -67,6 +92,7 @@ export function classifyRGB(
     b: Math.round(b),
     label,
     conclusion,
+    isOutOfRange: false,
     closestNeighbors,
     freshVotes,
     spoiledVotes,

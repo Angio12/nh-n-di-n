@@ -20,8 +20,9 @@ export interface ClassificationResult {
   r: number;
   g: number;
   b: number;
-  label: 'xanh lá' | 'đỏ';
+  label: 'xanh lá' | 'đỏ' | 'ngoài vùng';
   conclusion: string;
+  isOutOfRange?: boolean;
   closestNeighbors: KNNNeighbor[];
   freshVotes: number;
   spoiledVotes: number;

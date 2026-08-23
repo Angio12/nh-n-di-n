@@ -1,21 +1,17 @@
 import React from 'react';
-import { Camera, Database, CheckCircle, AlertOctagon, ArrowUpRight } from 'lucide-react';
-import { ClassificationResult, MeatSample } from '../types';
+import { Camera, CheckCircle, AlertOctagon, HelpCircle } from 'lucide-react';
+import { ClassificationResult } from '../types';
 
 interface ResultDashboardProps {
   result: ClassificationResult;
   onOpenScanner: () => void;
-  onOpenDataset: () => void;
-  onSelectPreset: (sample: MeatSample) => void;
-  onManualRGBChange: (r: number, g: number, b: number) => void;
 }
 
 export const ResultDashboard: React.FC<ResultDashboardProps> = ({
   result,
   onOpenScanner,
-  onOpenDataset,
-  onSelectPreset,
 }) => {
+  const isOutOfRange = result.isOutOfRange || result.label === 'ngoài vùng';
   const isFresh = result.label === 'xanh lá';
   const hexColor = `#${result.r.toString(16).padStart(2, '0')}${result.g
     .toString(16)
@@ -86,90 +82,6 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({
               </span>
             </div>
           </div>
-
-          {/* Quick Presets for easy testing */}
-          <div className="mt-4 pt-4 border-t border-[#2e2e38]">
-            <div className="flex items-center justify-between text-xs text-[#9ca3af] mb-2 font-medium">
-              <span>Mẫu thử nghiệm nhanh:</span>
-              <button
-                onClick={onOpenDataset}
-                className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-[11px] cursor-pointer"
-              >
-                <span>Xem toàn bộ mẫu</span>
-                <ArrowUpRight className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() =>
-                  onSelectPreset({
-                    time: '0h',
-                    group: 'A',
-                    r: 200,
-                    g: 176,
-                    b: 178,
-                    obs: 'hồng nhạt',
-                    status: 'tươi',
-                    label: 'xanh lá',
-                    conclusion: 'THỊT TƯƠI SẠCH – NÊN ĂN NGAY',
-                  })
-                }
-                className="px-2.5 py-2 rounded-lg bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-900/50 text-left transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#c8b0b2]" />
-                  <span className="text-xs font-bold text-emerald-400">Mẫu Tươi (0h)</span>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">RGB: 200, 176, 178</p>
-              </button>
-
-              <button
-                onClick={() =>
-                  onSelectPreset({
-                    time: '24h',
-                    group: 'B',
-                    r: 193,
-                    g: 180,
-                    b: 176,
-                    obs: 'hồng pha xanh',
-                    status: 'thối rõ',
-                    label: 'đỏ',
-                    conclusion: 'KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG',
-                  })
-                }
-                className="px-2.5 py-2 rounded-lg bg-amber-950/40 border border-amber-500/30 hover:bg-amber-900/50 text-left transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#c1b4b0]" />
-                  <span className="text-xs font-bold text-amber-400">Biến chất (24h)</span>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">RGB: 193, 180, 176</p>
-              </button>
-
-              <button
-                onClick={() =>
-                  onSelectPreset({
-                    time: '60h',
-                    group: 'A',
-                    r: 171,
-                    g: 178,
-                    b: 180,
-                    obs: 'xanh dương',
-                    status: 'thối rõ',
-                    label: 'đỏ',
-                    conclusion: 'KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG',
-                  })
-                }
-                className="px-2.5 py-2 rounded-lg bg-red-950/40 border border-red-500/30 hover:bg-red-900/50 text-left transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#abb2b4]" />
-                  <span className="text-xs font-bold text-red-400">Mẫu Hỏng (60h)</span>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">RGB: 171, 178, 180</p>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -214,35 +126,43 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({
             Phân loại mức độ tươi
           </div>
 
-          <div className="status-container grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Green status lamp */}
-            <div
-              className={`status-item st-green p-4 rounded-xl text-center font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
-                isFresh
-                  ? 'active bg-[#10b981] text-black shadow-[0_0_24px_rgba(16,185,129,0.5)] scale-[1.02] border-2 border-emerald-300'
-                  : 'bg-[#10b981]/15 text-emerald-600/50 border border-emerald-900/30 opacity-25 grayscale-[0.5]'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 text-sm md:text-base">
-                <CheckCircle className="w-5 h-5" />
-                <span>THỊT TƯƠI SẠCH – NÊN ĂN NGAY</span>
-              </div>
+          {isOutOfRange ? (
+            /* Out of Dataset Range State */
+            <div className="p-4 rounded-xl text-center font-bold bg-amber-500/20 text-amber-300 border-2 border-amber-500/50 shadow-[0_0_24px_rgba(245,158,11,0.25)] flex items-center justify-center gap-2">
+              <HelpCircle className="w-6 h-6 text-amber-400" />
+              <span className="text-base md:text-lg">NẰM NGOÀI VÙNG DỮ LIỆU</span>
             </div>
+          ) : (
+            <div className="status-container grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Green status lamp */}
+              <div
+                className={`status-item st-green p-4 rounded-xl text-center font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                  isFresh
+                    ? 'active bg-[#10b981] text-black shadow-[0_0_24px_rgba(16,185,129,0.5)] scale-[1.02] border-2 border-emerald-300'
+                    : 'bg-[#10b981]/15 text-emerald-600/50 border border-emerald-900/30 opacity-25 grayscale-[0.5]'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-sm md:text-base">
+                  <CheckCircle className="w-5 h-5" />
+                  <span>THỊT TƯƠI SẠCH – NÊN ĂN NGAY</span>
+                </div>
+              </div>
 
-            {/* Red status lamp */}
-            <div
-              className={`status-item st-red p-4 rounded-xl text-center font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
-                !isFresh
-                  ? 'active bg-[#ef4444] text-white shadow-[0_0_24px_rgba(239,68,68,0.5)] scale-[1.02] border-2 border-red-300'
-                  : 'bg-[#ef4444]/15 text-red-500/40 border border-red-900/30 opacity-25 grayscale-[0.5]'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 text-sm md:text-base">
-                <AlertOctagon className="w-5 h-5" />
-                <span>KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG</span>
+              {/* Red status lamp */}
+              <div
+                className={`status-item st-red p-4 rounded-xl text-center font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                  !isFresh
+                    ? 'active bg-[#ef4444] text-white shadow-[0_0_24px_rgba(239,68,68,0.5)] scale-[1.02] border-2 border-red-300'
+                    : 'bg-[#ef4444]/15 text-red-500/40 border border-red-900/30 opacity-25 grayscale-[0.5]'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-sm md:text-base">
+                  <AlertOctagon className="w-5 h-5" />
+                  <span>KHÔNG ĂN ĐƯỢC – THỊT ĐÃ ƠI / HỎNG</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Card 3: Recommendations */}
@@ -253,7 +173,11 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({
             </div>
 
             <p className="text-sm md:text-[15px] leading-relaxed text-[#d1d5db] mb-4">
-              {isFresh ? (
+              {isOutOfRange ? (
+                <>
+                  Màu sắc trích xuất tại vùng ROI <strong className="text-amber-400">nằm ngoài vùng dữ liệu mẫu</strong> của màng chỉ thị màu. Vui lòng căn chỉnh lại vùng tâm chỉ thị màu vào đúng hồng tâm camera hoặc kiểm tra lại điều kiện ánh sáng.
+                </>
+              ) : isFresh ? (
                 <>
                   Thực phẩm đang ở trạng thái <strong className="text-emerald-400">Tươi Tốt</strong>. Màng chỉ thị màu hoạt động ổn định. Đề xuất chế biến ngay hoặc duy trì bảo quản lạnh dưới 4°C.
                 </>
@@ -270,18 +194,10 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({
             <button
               id="btn-scan-again"
               onClick={onOpenScanner}
-              className="action-btn bg-[#3b82f6] hover:bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg text-sm transition-all duration-200 inline-flex items-center justify-center gap-2 shadow-md hover:shadow-blue-500/20 flex-1 sm:flex-initial cursor-pointer"
+              className="action-btn bg-[#3b82f6] hover:bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg text-sm transition-all duration-200 inline-flex items-center justify-center gap-2 shadow-md hover:shadow-blue-500/20 flex-1 cursor-pointer"
             >
               <Camera className="w-4 h-4" />
               <span>Chụp Quét Mẫu Mới</span>
-            </button>
-
-            <button
-              onClick={onOpenDataset}
-              className="bg-[#2e2e38] hover:bg-[#3e3e48] text-gray-200 font-medium px-4 py-3 rounded-lg text-sm transition-colors inline-flex items-center justify-center gap-2 border border-white/10 cursor-pointer"
-            >
-              <Database className="w-4 h-4 text-blue-400" />
-              <span>Tra Cứu Dữ Liệu Mẫu</span>
             </button>
           </div>
         </div>

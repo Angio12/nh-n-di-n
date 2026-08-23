@@ -1,16 +1,14 @@
 import React from 'react';
-import { Camera, BarChart3, Database } from 'lucide-react';
+import { Camera, BarChart3 } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: 'result' | 'camera';
   onTabChange: (tab: 'result' | 'camera') => void;
-  onOpenDataset: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onTabChange,
-  onOpenDataset,
 }) => {
   return (
     <header className="bg-[#1e1e24] border-b border-[#2e2e38] px-4 md:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30 shadow-md">
@@ -54,17 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span>Camera Quét Mẫu</span>
           </button>
         </div>
-
-        {/* Dataset Button */}
-        <button
-          id="btn-open-dataset"
-          onClick={onOpenDataset}
-          title="Xem bộ dữ liệu mẫu thực nghiệm"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2e2e38]/80 text-[#9ca3af] hover:text-white hover:bg-[#2e2e38] border border-white/10 transition-colors cursor-pointer"
-        >
-          <Database className="w-3.5 h-3.5 text-blue-400" />
-          <span className="hidden sm:inline">Dữ liệu mẫu</span>
-        </button>
       </div>
     </header>
   );
