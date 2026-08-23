@@ -230,11 +230,18 @@
             position: relative;
             width: 100%;
             max-width: 900px;
-            height: 520px;
+            height: 380px;
+            max-height: 70vh;
             background: #ffffff;
             border-radius: 16px;
             overflow: hidden;
             border: 2px solid var(--border-color);
+        }
+
+        @media (min-width: 640px) {
+            .camera-viewport {
+                height: 520px;
+            }
         }
 
         video {
@@ -279,12 +286,19 @@
         }
 
         .scan-ring {
-            width: 200px;
-            height: 200px;
+            width: 170px;
+            height: 170px;
             border: 3px dashed var(--status-green);
             border-radius: 50%;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
             position: relative;
+        }
+
+        @media (min-width: 640px) {
+            .scan-ring {
+                width: 200px;
+                height: 200px;
+            }
         }
 
         .scan-ring::after {
@@ -383,7 +397,7 @@
                         <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                     </label>
                 </div>
-                <video id="webcam" autoplay playsinline style="display: none;"></video>
+                <video id="webcam" autoplay playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5" muted style="display: none;"></video>
                 <div class="camera-overlay">
                     <div class="camera-guide-text">Di chuyển và căn chỉnh màng chỉ thị vào khung tròn bên dưới</div>
                     <div class="scan-ring"></div>
@@ -507,11 +521,25 @@
             const videoElem = document.getElementById('webcam');
             const fallbackElem = document.getElementById('camera-fallback');
 
+            videoElem.setAttribute('playsinline', 'true');
+            videoElem.setAttribute('webkit-playsinline', 'true');
+            videoElem.setAttribute('x5-playsinline', 'true');
+            videoElem.setAttribute('x5-video-player-type', 'h5');
+            videoElem.muted = true;
+            videoElem.playsInline = true;
+
             try {
-                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
                 videoElem.srcObject = videoStream;
                 videoElem.style.display = 'block';
                 if (fallbackElem) fallbackElem.style.display = 'none';
+                await videoElem.play().catch(() => {});
             } catch (err) {
                 console.warn("Không thể bật webcam:", err);
                 videoElem.style.display = 'none';

@@ -46,8 +46,15 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onCance
       setStream(newStream);
 
       if (videoRef.current) {
-        videoRef.current.srcObject = newStream;
-        await videoRef.current.play().catch(() => {});
+        const video = videoRef.current;
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
+        video.setAttribute('x5-playsinline', 'true');
+        video.setAttribute('x5-video-player-type', 'h5');
+        video.muted = true;
+        video.playsInline = true;
+        video.srcObject = newStream;
+        await video.play().catch(() => {});
       }
     } catch (err: any) {
       console.warn('Không thể bật webcam:', err);
@@ -229,7 +236,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onCance
       <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
 
       {/* Main Viewport */}
-      <div className="relative w-full max-w-[900px] h-[480px] md:h-[520px] bg-white rounded-2xl overflow-hidden border-2 border-[#2e2e38] shadow-2xl flex items-center justify-center">
+      <div className="relative w-full max-w-[900px] h-[360px] sm:h-[450px] md:h-[520px] max-h-[70vh] bg-white rounded-2xl overflow-hidden border-2 border-[#2e2e38] shadow-2xl flex items-center justify-center">
         {/* Live Video Feed */}
         {!uploadedImage && (
           <video
@@ -238,6 +245,8 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onCance
             autoPlay
             playsInline
             muted
+            controls={false}
+            disablePictureInPicture
             className={`w-full h-full object-cover ${cameraError ? 'hidden' : 'block'}`}
           />
         )}
